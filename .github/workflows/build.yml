@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 2. Instalar dependencias del sistema necesarias
+      # 2. Instalar dependencias del sistema
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -32,23 +32,41 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython
 
-      # 4. TRUCO: Forzar versiones estables en buildozer.spec
-      # Esto evita que descargue la versión "Preview" que bloquea la licencia
-      - name: Configure Stable Android Version
+      # 4. Configurar versión ESTABLE de Android (para evitar la versión Preview/Baklava)
+      - name: Configure Buildozer Spec
         run: |
+          # Si no existe el spec, creamos uno nuevo
+          if [ ! -f buildozer.spec ]; then buildozer init; fi
+          
+          # Forzamos API 33 (Estable) y Java 11
           sed -i 's/android.api = .*/android.api = 33/' buildozer.spec
           sed -i 's/android.minapi = .*/android.minapi = 21/' buildozer.spec
-          # Descomentamos y fijamos una versión de build-tools estable
-          sed -i 's/# android.sdk_build_tools_version = .*/android.sdk_build_tools_version = 33.0.0/' buildozer.spec
-          # Aceptamos que descargue cosas automáticamente
+          sed -i 's/android.ndk = .*/android.ndk = 25b/' buildozer.spec
           sed -i 's/android.accept_sdk_license = .*/android.accept_sdk_license = True/' buildozer.spec
+          
+          # Desactivamos actualizaciones automáticas del SDK para que no busque versiones beta
+          sed -i 's/# android.sdk_build_tools_version = .*/android.sdk_build_tools_version = 33.0.0/' buildozer.spec
 
-      # 5. Compilar (Usamos 'yes' para aceptar cualquier otra licencia pendiente)
+      # 5. EL HACK: Crear licencias manualmente antes de empezar
+      - name: Pre-Accept Android Licenses
+        run: |
+          # Crear la carpeta donde Buildozer buscará las licencias
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          
+          # Escribir los códigos secretos de aceptación de Google
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          
+          # Aceptar también la licencia Preview por si acaso insiste en descargarla
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+
+      # 6. Compilar (Ahora sí debería pasar sin preguntar)
       - name: Build with Buildozer
         run: |
           yes | buildozer android debug
 
-      # 6. Subir el APK
+      # 7. Subir el APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
