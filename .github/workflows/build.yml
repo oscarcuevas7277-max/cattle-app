@@ -87,12 +87,13 @@ jobs:
           echo "--- Valores configurados ---"
           grep -E "android.api|android.minapi|android.ndk|requirements" buildozer.spec
 
-      # 6️⃣ Limpiar builds previos
+      # 6️⃣ Limpiar builds previos (SIN buildozer clean - CORREGIDO)
       - name: Clean previous builds
         run: |
-          buildozer clean
-          rm -rf .buildozer/build
-          rm -rf bin/
+          rm -rf .buildozer/build/ || true
+          rm -rf .buildozer/applibs/ || true
+          rm -rf bin/ || true
+          echo "✅ Directorios limpios"
 
       # 7️⃣ Compilar APK (con reintentos)
       - name: Build with Buildozer
@@ -153,5 +154,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: bin/ganaderiapr-*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
