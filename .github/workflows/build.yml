@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       # 2️⃣ Instalar dependencias del sistema
       - name: Install System Dependencies
@@ -69,7 +69,10 @@ jobs:
           sed -i 's/android.minapi = .*/android.minapi = 21/' buildozer.spec
           sed -i 's/android.ndk = .*/android.ndk = 25b/' buildozer.spec
           sed -i 's/android.accept_sdk_license = .*/android.accept_sdk_license = True/' buildozer.spec
-
+          sed -i 's/requirements = .*/requirements = python3==3.10.11,kivy,pyjnius/' buildozer.spec
+    
+      - name: Clean previous builds
+        run: rm -rf .buildozer
       # 6️⃣ Compilar APK
       - name: Build with Buildozer
         env:
