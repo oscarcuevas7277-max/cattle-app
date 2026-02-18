@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1️⃣ Preparar Python 3.9
+      # 1️⃣ Configurar Python 3.10
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -24,67 +24,134 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev
           sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev
-          sudo apt-get install -y zlib1g-dev unzip autoconf libtool pkg-config wget
+          sudo apt-get install -y zlib1g-dev unzip autoconf libtool pkg-config wget curl
           sudo apt-get install -y openjdk-17-jdk
 
-      # 3️⃣ Instalar Buildozer
-      - name: Install Buildozer
+      # 3️⃣ Instalar Buildozer y dependencias Python
+      - name: Install Buildozer and Python deps
         run: |
-          pip install --upgrade pip
-          pip install buildozer cython
+          python -m pip install --upgrade pip setuptools wheel
+          pip install buildozer cython pyjnius==1.5.0 kivy==2.2.1
 
-      # 4️⃣ Instalar Android SDK Manualmente (CORREGIDO)
-      - name: Install Android SDK Manually
+      # 4️⃣ Configurar Android NDK y SDK
+      - name: Setup Android SDK and NDK
         run: |
-          export SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $SDK_DIR
-
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-25b
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          
+          # Crear directorios
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          mkdir -p $ANDROID_HOME/licenses
+          
+          # Descargar Android Command Line Tools
           echo "Descargando Android Command Line Tools..."
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           
-          unzip -q cmdline-tools.zip
+          unzip -q commandlinetools-linux-9477386_latest.zip
+          mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          rm commandlinetools-linux-9477386_latest.zip
           
-          mkdir -p $SDK_DIR/cmdline-tools
-          mv cmdline-tools $SDK_DIR/cmdline-tools/latest
-          rm cmdline-tools.zip
+          # Aceptar licencias
+          mkdir -p $ANDROID_HOME/licenses
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
+          
+          # Crear symlinks para sdkmanager
+          mkdir -p $ANDROID_HOME/tools/bin
+          ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager
+          
+          # Instalar componentes de Android
+          echo "Instalando componentes de Android SDK..."
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-33" "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653" 2>&1 | tail -20
+          
+          echo "✅ Android SDK configurado"
 
-          # 🔥 CREAR LICENCIAS
-          mkdir -p $SDK_DIR/licenses
-          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $SDK_DIR/licenses/android-sdk-license
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $SDK_DIR/licenses/android-sdk-license
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $SDK_DIR/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" > $SDK_DIR/licenses/android-sdk-preview-license
-
-          # 🔥 FIX CLAVE PARA BUILDOZER (crear ruta tools/bin)
-          mkdir -p $SDK_DIR/tools/bin
-          ln -s $SDK_DIR/cmdline-tools/latest/bin/sdkmanager $SDK_DIR/tools/bin/sdkmanager
-
-          echo "SDK configurado correctamente"
-
-      # 5️⃣ Configurar Buildozer Spec
+      # 5️⃣ Configurar buildozer.spec con valores correctos
       - name: Configure Buildozer Spec
         run: |
-          if [ ! -f buildozer.spec ]; then buildozer init; fi
+          # Si no existe, crear uno
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
+          
+          # Actualizar valores clave en buildozer.spec
           sed -i 's/android.api = .*/android.api = 33/' buildozer.spec
           sed -i 's/android.minapi = .*/android.minapi = 21/' buildozer.spec
           sed -i 's/android.ndk = .*/android.ndk = 25b/' buildozer.spec
           sed -i 's/android.accept_sdk_license = .*/android.accept_sdk_license = True/' buildozer.spec
-          sed -i 's/requirements = .*/requirements = python3==3.10.11,kivy,pyjnius/' buildozer.spec
-    
+          sed -i 's/requirements = .*/requirements = python3==3.10.11,kivy==2.2.1,pillow,pyjnius==1.5.0/' buildozer.spec
+          sed -i 's/android.gradle_dependencies = .*/android.gradle_dependencies = /' buildozer.spec
+          
+          echo "✅ buildozer.spec configurado"
+          echo "--- Valores configurados ---"
+          grep -E "android.api|android.minapi|android.ndk|requirements" buildozer.spec
+
+      # 6️⃣ Limpiar builds previos
       - name: Clean previous builds
-        run: rm -rf .buildozer
-      # 6️⃣ Compilar APK
+        run: |
+          buildozer clean
+          rm -rf .buildozer/build
+          rm -rf bin/
+
+      # 7️⃣ Compilar APK (con reintentos)
       - name: Build with Buildozer
         env:
           ANDROIDSDK: /home/runner/.buildozer/android/platform/android-sdk
           ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_NDK_ROOT: /home/runner/.buildozer/android/platform/android-ndk-25b
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          PATH: /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:/home/runner/.buildozer/android/platform/android-ndk-25b:$PATH
         run: |
-          yes | buildozer android debug
+          set -e
+          echo "Iniciando compilación..."
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          echo "JAVA_HOME: $JAVA_HOME"
+          
+          # Intentar compilar hasta 2 veces en caso de error
+          for attempt in 1 2; do
+            echo ""
+            echo "🔨 Intento de compilación: $attempt"
+            if buildozer android debug; then
+              echo "✅ Compilación exitosa"
+              break
+            else
+              echo "⚠️ Intento $attempt falló, reintentando..."
+              if [ $attempt -eq 2 ]; then
+                echo "❌ Compilación falló después de 2 intentos"
+                exit 1
+              fi
+              sleep 5
+            fi
+          done
 
-      # 7️⃣ Subir APK generado
+      # 8️⃣ Verificar que el APK fue creado
+      - name: Verify APK
+        run: |
+          if [ -f bin/ganaderiapr-1.0-debug.apk ]; then
+            echo "✅ APK creado exitosamente"
+            ls -lh bin/*.apk
+          else
+            echo "❌ APK no encontrado"
+            ls -la bin/
+            exit 1
+          fi
+
+      # 9️⃣ Subir APK como artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
-          name: package
-          path: bin/*.apk
+          name: ganaderiapr-apk
+          path: bin/ganaderiapr-*.apk
+          retention-days: 7
+
+      # 🔟 Crear release si es tag
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: bin/ganaderiapr-*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
