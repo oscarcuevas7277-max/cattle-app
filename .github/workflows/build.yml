@@ -7,18 +7,18 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Preparar Python
+      # 1. Preparar Python 3.9
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
-      # 2. Instalar dependencias del sistema (lo que fallaba en tu Kali)
+      # 2. Instalar dependencias del sistema necesarias
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -26,18 +26,29 @@ jobs:
           sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev
           sudo apt-get install -y zlib1g-dev openjdk-17-jdk unzip autoconf libtool pkg-config
 
-      # 3. Instalar Buildozer y Cython
+      # 3. Instalar Buildozer
       - name: Install Buildozer
         run: |
           pip install --upgrade pip
           pip install buildozer cython
 
-      # 4. Compilar (Usamos 'yes' para aceptar licencias automáticamente)
+      # 4. TRUCO: Forzar versiones estables en buildozer.spec
+      # Esto evita que descargue la versión "Preview" que bloquea la licencia
+      - name: Configure Stable Android Version
+        run: |
+          sed -i 's/android.api = .*/android.api = 33/' buildozer.spec
+          sed -i 's/android.minapi = .*/android.minapi = 21/' buildozer.spec
+          # Descomentamos y fijamos una versión de build-tools estable
+          sed -i 's/# android.sdk_build_tools_version = .*/android.sdk_build_tools_version = 33.0.0/' buildozer.spec
+          # Aceptamos que descargue cosas automáticamente
+          sed -i 's/android.accept_sdk_license = .*/android.accept_sdk_license = True/' buildozer.spec
+
+      # 5. Compilar (Usamos 'yes' para aceptar cualquier otra licencia pendiente)
       - name: Build with Buildozer
         run: |
           yes | buildozer android debug
 
-      # 5. Subir el archivo APK resultante
+      # 6. Subir el APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
