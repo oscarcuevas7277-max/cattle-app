@@ -10,23 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Instalar dependencias necesarias para Buildozer
-      - name: Install dependencies
+      # 1. Preparar Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 2. Instalar dependencias del sistema (lo que fallaba en tu Kali)
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev
+          sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev
+          sudo apt-get install -y zlib1g-dev openjdk-17-jdk unzip autoconf libtool pkg-config
 
+      # 3. Instalar Buildozer y Cython
+      - name: Install Buildozer
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython
+
+      # 4. Compilar (Usamos 'yes' para aceptar licencias automáticamente)
       - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
+        run: |
+          yes | buildozer android debug
 
-      - name: Upload APK artifact
+      # 5. Subir el archivo APK resultante
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: package
