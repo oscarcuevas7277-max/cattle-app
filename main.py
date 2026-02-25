@@ -82,8 +82,25 @@ class Database:
     """Gestión completa de la base de datos SQLite"""
     
     def __init__(self):
-        self.db_path = os.path.join(os.path.expanduser('~'), 'cattle_manager.db')
-        self.init_database()
+        # CORRECCIÓN PARA ANDROID
+        try:
+            if platform == 'android':
+                from android.storage import app_storage_path
+                storage_path = app_storage_path()
+                self.db_path = os.path.join(storage_path, 'cattle_manager.db')
+                print(f"[ANDROID] Base de datos en: {self.db_path}")
+            else:
+                self.db_path = os.path.join(os.path.expanduser('~'), 'cattle_manager.db')
+                print(f"[DESKTOP] Base de datos en: {self.db_path}")
+        except Exception as e:
+            print(f"[ERROR] Detectando plataforma: {e}")
+            self.db_path = '/data/data/com.ganaderia.ganaderiapr/files/cattle_manager.db'
+        
+        try:
+            self.init_database()
+            print("[OK] Base de datos inicializada")
+        except Exception as e:
+            print(f"[ERROR] Inicializando DB: {e}")
     
     def get_connection(self):
         return sqlite3.connect(self.db_path)
