@@ -387,6 +387,19 @@ class Database:
         ''', (today, future_30))
         stats['need_vaccine'] = cursor.fetchone()[0]
         
+        # Calcular % de partos anuales (últimos 2 años)
+        two_years_ago = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
+        cursor.execute('SELECT COUNT(*) FROM cattle')
+        total_cows = cursor.fetchone()[0]
+        cursor.execute('SELECT COUNT(*) FROM events WHERE event_type = ? AND event_date >= ?', ('birth', two_years_ago))
+        births_2y = cursor.fetchone()[0]
+        
+        if total_cows > 0:
+            births_per_cow = births_2y / total_cows
+            stats['birth_rate_annual'] = round((births_per_cow / 2) * 100, 1)
+        else:
+            stats['birth_rate_annual'] = 0
+        
         conn.close()
         return stats
     
@@ -470,7 +483,7 @@ class HomeScreen(Screen):
         self.layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         # Header
-        header = BoxLayout(size_hint_y=0.1, spacing=10)
+        header = BoxLayout(size_hint_y=0.1, spacing=15)
         title = Label(
             text='[b]🐄 Gestión Ganadera PRO[/b]',
             markup=True,
@@ -482,13 +495,13 @@ class HomeScreen(Screen):
         
         # Stats container
         scroll = ScrollView(size_hint_y=0.5)
-        self.stats_container = GridLayout(cols=2, spacing=10, size_hint_y=None, padding=5)
+        self.stats_container = GridLayout(cols=2, spacing=15, size_hint_y=None, padding=5)
         self.stats_container.bind(minimum_height=self.stats_container.setter('height'))
         scroll.add_widget(self.stats_container)
         self.layout.add_widget(scroll)
         
         # Botones principales
-        buttons_grid = GridLayout(cols=2, spacing=10, size_hint_y=0.4)
+        buttons_grid = GridLayout(cols=2, spacing=15, size_hint_y=0.4)
         
         btn_list = RoundedButton(text='📋 Ver Ganado', font_size='18sp', bg_color=PRIMARY)
         btn_list.bind(on_press=lambda x: setattr(self.manager, 'current', 'cattle_list'))
@@ -515,7 +528,7 @@ class HomeScreen(Screen):
     
     def create_stat_card(self, icon, title, value, subtitle=''):
         """Crear tarjeta de estadística"""
-        card = StyledCard(orientation='horizontal', size_hint_y=None, height=90, padding=15, spacing=10)
+        card = StyledCard(orientation='horizontal', size_hint_y=None, height=90, padding=15, spacing=15)
         
         icon_label = Label(text=icon, font_size='36sp', size_hint_x=0.25, color=TEXT)
         
@@ -582,10 +595,10 @@ class CattleListScreen(Screen):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         # Barra superior
-        top_bar = BoxLayout(size_hint_y=0.1, spacing=10)
+        top_bar = BoxLayout(size_hint_y=0.1, spacing=15)
         
         btn_back = RoundedButton(text='← Inicio', size_hint_x=0.25, bg_color=CARD)
         btn_back.bind(on_press=lambda x: setattr(self.manager, 'current', 'home'))
@@ -608,7 +621,7 @@ class CattleListScreen(Screen):
         
         # Lista
         self.scroll = ScrollView(size_hint_y=0.9)
-        self.cattle_container = GridLayout(cols=1, spacing=10, size_hint_y=None, padding=5)
+        self.cattle_container = GridLayout(cols=1, spacing=15, size_hint_y=None, padding=5)
         self.cattle_container.bind(minimum_height=self.cattle_container.setter('height'))
         self.scroll.add_widget(self.cattle_container)
         self.layout.add_widget(self.scroll)
@@ -643,7 +656,7 @@ class CattleListScreen(Screen):
         card = StyledCard(orientation='vertical', size_hint_y=None, height=140, padding=15, spacing=8)
         
         # Header
-        header = BoxLayout(size_hint_y=0.35, spacing=10)
+        header = BoxLayout(size_hint_y=0.35, spacing=15)
         
         status_icon = '🤰' if cattle.get('is_pregnant') else '❌'
         icon_label = Label(text=status_icon, font_size='36sp', size_hint_x=0.15)
@@ -781,10 +794,10 @@ class AddCattleScreen(Screen):
         super().__init__(**kwargs)
         self.cattle_id = None
         
-        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         # Barra superior
-        top_bar = BoxLayout(size_hint_y=0.08, spacing=10)
+        top_bar = BoxLayout(size_hint_y=0.08, spacing=15)
         btn_back = RoundedButton(text='← Atrás', size_hint_x=0.3, bg_color=CARD)
         btn_back.bind(on_press=self.go_back)
         self.title_label = Label(text='[b]Agregar Vaca[/b]', markup=True, size_hint_x=0.7, color=TEXT)
@@ -938,7 +951,7 @@ class AddCattleScreen(Screen):
     
     def show_popup(self, title, message, callback=None):
         """Mostrar popup"""
-        content = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         content.add_widget(Label(text=message, color=TEXT))
         
         btn_ok = RoundedButton(text='OK', size_hint_y=None, height=50, bg_color=PRIMARY)
@@ -985,7 +998,7 @@ class CattleDetailScreen(Screen):
         self.cattle_id = None
         self.cattle_data = None
         
-        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         # Barra superior
         top_bar = BoxLayout(size_hint_y=0.08, spacing=5)
@@ -1002,7 +1015,7 @@ class CattleDetailScreen(Screen):
         
         # Contenido scrollable
         self.scroll = ScrollView(size_hint_y=0.92)
-        self.content = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None, padding=10)
+        self.content = BoxLayout(orientation='vertical', spacing=15, size_hint_y=None, padding=10)
         self.content.bind(minimum_height=self.content.setter('height'))
         
         self.scroll.add_widget(self.content)
@@ -1060,7 +1073,7 @@ class CattleDetailScreen(Screen):
         self.content.add_widget(info_card)
         
         # Botones de acción
-        actions_grid = GridLayout(cols=2, spacing=10, size_hint_y=None, height=120)
+        actions_grid = GridLayout(cols=2, spacing=15, size_hint_y=None, height=120)
         
         btn_vaccinate = RoundedButton(text='💉 Vacunar', bg_color=PRIMARY)
         btn_vaccinate.bind(on_press=self.add_vaccination)
@@ -1086,7 +1099,7 @@ class CattleDetailScreen(Screen):
             text='[b]HISTORIAL DE VACUNACIÓN[/b]',
             markup=True,
             size_hint_y=None,
-            height=40,
+            height=55,
             color=TEXT
         ))
         
@@ -1147,10 +1160,10 @@ class CattleDetailScreen(Screen):
     
     def confirm_delete(self, instance):
         """Confirmar eliminación"""
-        content = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         content.add_widget(Label(text='¿Eliminar esta vaca?', color=TEXT))
         
-        buttons = BoxLayout(spacing=10, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
         btn_yes = RoundedButton(text='Sí', bg_color=DANGER)
         btn_no = RoundedButton(text='No', bg_color=CARD)
         
@@ -1174,7 +1187,7 @@ class CattleDetailScreen(Screen):
     
     def add_vaccination(self, instance):
         """Popup de vacunación"""
-        content = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         content.add_widget(Label(text='Nombre de la Vacuna:', size_hint_y=None, height=30, color=TEXT))
         vaccine_input = TextInput(
@@ -1219,7 +1232,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=10, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
         btn_save = RoundedButton(text='💾 Guardar', bg_color=SUCCESS)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1270,7 +1283,7 @@ class CattleDetailScreen(Screen):
     
     def register_birth(self, instance):
         """Popup de parto"""
-        content = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         content.add_widget(Label(
             text='¿Registrar el parto?\nEsto la marcará como NO PREÑADA',
@@ -1301,7 +1314,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=10, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
         btn_confirm = RoundedButton(text='✅ Confirmar', bg_color=SUCCESS)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1339,7 +1352,7 @@ class CattleDetailScreen(Screen):
     
     def dry_cow(self, instance):
         """Popup de secado"""
-        content = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         content.add_widget(Label(
             text='¿Secar esta vaca?',
@@ -1369,7 +1382,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=10, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
         btn_confirm = RoundedButton(text='✅ Secar', bg_color=WARNING)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1401,13 +1414,13 @@ class CattleDetailScreen(Screen):
     
     def mark_pregnant(self, instance):
         """Popup marcar preñada"""
-        content = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         content.add_widget(Label(
             text='Marcar como PREÑADA',
             color=TEXT,
             size_hint_y=None,
-            height=40,
+            height=55,
             font_size='16sp',
             bold=True
         ))
@@ -1446,7 +1459,7 @@ class CattleDetailScreen(Screen):
             text=f'[color={dim_color}]Se calculan 283 días automáticamente[/color]',
             markup=True,
             size_hint_y=None,
-            height=25,
+            height=35,
             font_size='11sp'
         ))
         
@@ -1460,7 +1473,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=10, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
         btn_confirm = RoundedButton(text='✅ Marcar Preñada', bg_color=PINK)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1516,7 +1529,7 @@ class AgendaScreen(Screen):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         # Header
         top_bar = BoxLayout(size_hint_y=0.08, spacing=5)
@@ -1532,7 +1545,7 @@ class AgendaScreen(Screen):
         
         # Eventos
         self.scroll = ScrollView(size_hint_y=0.92)
-        self.events_container = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None, padding=10)
+        self.events_container = BoxLayout(orientation='vertical', spacing=15, size_hint_y=None, padding=10)
         self.events_container.bind(minimum_height=self.events_container.setter('height'))
         
         self.scroll.add_widget(self.events_container)
@@ -1626,7 +1639,7 @@ class AgendaScreen(Screen):
     
     def create_agenda_card(self, cattle, color):
         """Crear tarjeta de evento"""
-        card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=15, spacing=10)
+        card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=15, spacing=15)
         
         info = BoxLayout(orientation='vertical')
         
@@ -1673,7 +1686,7 @@ class AgendaScreen(Screen):
     
     def create_vaccine_card(self, cattle):
         """Crear tarjeta de vacuna"""
-        card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=15, spacing=10)
+        card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=15, spacing=15)
         
         info = BoxLayout(orientation='vertical')
         
@@ -1707,7 +1720,7 @@ class QuickLogScreen(Screen):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
         
         # Header
         top_bar = BoxLayout(size_hint_y=0.08, spacing=5)
