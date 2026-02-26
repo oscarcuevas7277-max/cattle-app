@@ -19,7 +19,7 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
 from kivy.graphics import Color, RoundedRectangle
 from kivy.core.window import Window
-from kivy.utils import get_color_from_hex
+from kivy.utils import get_color_from_hex, platform
 import sqlite3
 import re
 
@@ -87,14 +87,14 @@ class Database:
             if platform == 'android':
                 from android.storage import app_storage_path
                 storage_path = app_storage_path()
-                self.db_path = os.path.join(storage_path, 'cattle_manager.db')
+                self.db_path = "/tmp/cattle_manager.db"
                 print(f"[ANDROID] Base de datos en: {self.db_path}")
             else:
-                self.db_path = os.path.join(os.path.expanduser('~'), 'cattle_manager.db')
+                self.db_path = "/tmp/cattle_manager.db"
                 print(f"[DESKTOP] Base de datos en: {self.db_path}")
         except Exception as e:
             print(f"[ERROR] Detectando plataforma: {e}")
-            self.db_path = '/data/data/com.ganaderia.ganaderiapr/files/cattle_manager.db'
+            self.db_path = "/tmp/cattle_manager.db"
         
         try:
             self.init_database()
@@ -586,7 +586,7 @@ class HomeScreen(Screen):
         self.stats_container.add_widget(self.create_stat_card('🚫', 'Para Secar', stats.get('to_dry', 0), '60-90 días'))
         self.stats_container.add_widget(self.create_stat_card('👶', 'Partos 30d', stats.get('recent_births', 0), 'Recientes'))
         self.stats_container.add_widget(self.create_stat_card('📊', f'Año {datetime.now().year}', stats.get('births_this_year', 0), 'Partos'))
-        self.stats_container.add_widget(self.create_stat_card('💉', 'Vacunas 30d', stats.get('need_vaccine', 0), 'Próximas'))
+        self.stats_container.add_widget(self.create_stat_card('📈', f'{stats.get("birth_rate_annual", 0)}%', 'Partos/Año', '2 años'))
         self.stats_container.add_widget(self.create_stat_card('⚖️', f'{stats.get("avg_weight", 0)} kg', 'Peso Promedio'))
 
 
@@ -642,7 +642,7 @@ class CattleListScreen(Screen):
             no_data = Label(
                 text='No hay vacas registradas' if not search_query else 'No se encontraron resultados',
                 size_hint_y=None,
-                height=50,
+                height=70,
                 color=TEXT_DIM
             )
             self.cattle_container.add_widget(no_data)
@@ -954,7 +954,7 @@ class AddCattleScreen(Screen):
         content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         content.add_widget(Label(text=message, color=TEXT))
         
-        btn_ok = RoundedButton(text='OK', size_hint_y=None, height=50, bg_color=PRIMARY)
+        btn_ok = RoundedButton(text='OK', size_hint_y=None, height=70, bg_color=PRIMARY)
         content.add_widget(btn_ok)
         
         popup = Popup(
@@ -1106,7 +1106,7 @@ class CattleDetailScreen(Screen):
         vaccinations = db.get_vaccinations(cattle_id)
         if vaccinations:
             for vacc in vaccinations[:5]:
-                vacc_card = StyledCard(orientation='horizontal', size_hint_y=None, height=50, padding=10)
+                vacc_card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=10)
                 vacc_label = Label(
                     text=f"{vacc['vaccine_name']} - {vacc['vaccination_date']}",
                     color=TEXT
@@ -1163,7 +1163,7 @@ class CattleDetailScreen(Screen):
         content = BoxLayout(orientation='vertical', padding=15, spacing=15)
         content.add_widget(Label(text='¿Eliminar esta vaca?', color=TEXT))
         
-        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=70)
         btn_yes = RoundedButton(text='Sí', bg_color=DANGER)
         btn_no = RoundedButton(text='No', bg_color=CARD)
         
@@ -1232,7 +1232,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=70)
         btn_save = RoundedButton(text='💾 Guardar', bg_color=SUCCESS)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1314,7 +1314,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=70)
         btn_confirm = RoundedButton(text='✅ Confirmar', bg_color=SUCCESS)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1382,7 +1382,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=70)
         btn_confirm = RoundedButton(text='✅ Secar', bg_color=WARNING)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1473,7 +1473,7 @@ class CattleDetailScreen(Screen):
         )
         content.add_widget(notes_input)
         
-        buttons = BoxLayout(spacing=15, size_hint_y=None, height=50)
+        buttons = BoxLayout(spacing=15, size_hint_y=None, height=70)
         btn_confirm = RoundedButton(text='✅ Marcar Preñada', bg_color=PINK)
         btn_cancel = RoundedButton(text='❌ Cancelar', bg_color=DANGER)
         
@@ -1634,7 +1634,7 @@ class AgendaScreen(Screen):
                 text=f'[color={dim_color}]No hay eventos próximos[/color]',
                 markup=True,
                 size_hint_y=None,
-                height=50
+                height=70
             ))
     
     def create_agenda_card(self, cattle, color):
@@ -1791,7 +1791,7 @@ class QuickLogScreen(Screen):
                 text=f'[color={dim_color}]Sin actividades[/color]',
                 markup=True,
                 size_hint_y=None,
-                height=50
+                height=70
             ))
             return
         
@@ -1883,7 +1883,7 @@ class QuickLogScreen(Screen):
     
     def show_message(self, message):
         """Mostrar mensaje"""
-        msg_card = StyledCard(orientation='horizontal', size_hint_y=None, height=50, padding=10)
+        msg_card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=10)
         
         if '✅' in message:
             color = SUCCESS
