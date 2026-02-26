@@ -717,7 +717,7 @@ class CattleListScreen(Screen):
             text=detail_text,
             markup=True,
             halign='left',
-            font_size='12sp'
+            font_size="16sp"
         )
         detail_label.bind(size=detail_label.setter('text_size'))
         details.add_widget(detail_label)
@@ -1358,7 +1358,7 @@ class CattleDetailScreen(Screen):
             text='¿Secar esta vaca?',
             color=TEXT,
             size_hint_y=None,
-            height=40
+            height=60
         ))
         
         content.add_widget(Label(text='Fecha:', size_hint_y=None, height=30, color=TEXT))
@@ -1570,7 +1570,7 @@ class AgendaScreen(Screen):
                 text=f'[b][color={danger_color}]🚨 PARTOS ATRASADOS[/color][/b]',
                 markup=True,
                 size_hint_y=None,
-                height=40
+                height=60
             ))
             for cattle in agenda['overdue']:
                 card = self.create_agenda_card(cattle, DANGER)
@@ -1583,7 +1583,7 @@ class AgendaScreen(Screen):
                 text=f'[b][color={warn_color}]🚫 PARA SECAR (60-90 días)[/color][/b]',
                 markup=True,
                 size_hint_y=None,
-                height=40
+                height=60
             ))
             for cattle in agenda['to_dry']:
                 card = self.create_agenda_card(cattle, WARNING)
@@ -1596,7 +1596,7 @@ class AgendaScreen(Screen):
                 text=f'[b][color={warn_color}]⚠️ PRÓXIMAS A PARIR (0-60 días)[/color][/b]',
                 markup=True,
                 size_hint_y=None,
-                height=40
+                height=60
             ))
             for cattle in agenda['near_birth']:
                 card = self.create_agenda_card(cattle, WARNING)
@@ -1609,7 +1609,7 @@ class AgendaScreen(Screen):
                 text=f'[b][color={success_color}]👶 PARTOS RECIENTES (30 días)[/color][/b]',
                 markup=True,
                 size_hint_y=None,
-                height=40
+                height=60
             ))
             for cattle in agenda['recent_births']:
                 card = self.create_agenda_card(cattle, SUCCESS)
@@ -1622,7 +1622,7 @@ class AgendaScreen(Screen):
                 text=f'[b][color={info_color}]💉 VACUNACIONES PRÓXIMAS[/color][/b]',
                 markup=True,
                 size_hint_y=None,
-                height=40
+                height=60
             ))
             for cattle in agenda['need_vaccine']:
                 card = self.create_vaccine_card(cattle)
@@ -1659,7 +1659,7 @@ class AgendaScreen(Screen):
                     text=f"[color={dim_color}]Parto: {cattle['expected_birth_date']} ({days} días)[/color]",
                     markup=True,
                     halign='left',
-                    font_size='12sp'
+                    font_size="16sp"
                 )
                 detail.bind(size=detail.setter('text_size'))
             except:
@@ -1670,7 +1670,7 @@ class AgendaScreen(Screen):
                 text=f"[color={dim_color}]Parió: {cattle['last_birth_date']}[/color]",
                 markup=True,
                 halign='left',
-                font_size='12sp'
+                font_size="16sp"
             )
             detail.bind(size=detail.setter('text_size'))
         else:
@@ -1703,7 +1703,7 @@ class AgendaScreen(Screen):
             text=f"[color={dim_color}]Próxima: {cattle.get('next_vaccination_date', 'N/A')}[/color]",
             markup=True,
             halign='left',
-            font_size='12sp'
+            font_size="16sp"
         )
         detail.bind(size=detail.setter('text_size'))
         
@@ -1740,7 +1740,7 @@ class QuickLogScreen(Screen):
             text=f'[color={dim_color}]Comandos: "vacuné 123", "secé 456", "parió 789", "cargué 101"[/color]',
             markup=True,
             size_hint_y=0.08,
-            font_size='12sp'
+            font_size="16sp"
         )
         self.layout.add_widget(instructions)
         
@@ -1753,7 +1753,7 @@ class QuickLogScreen(Screen):
         self.layout.add_widget(self.scroll)
         
         # Input
-        input_box = BoxLayout(size_hint_y=0.1, spacing=5)
+        input_box = BoxLayout(size_hint_y=0.12, spacing=8)
         
         self.quick_input = TextInput(
             hint_text='Escribe comando...',
