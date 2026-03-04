@@ -533,8 +533,8 @@ class HomeScreen(Screen):
         self.layout.add_widget(header)
         
         # Stats cards
-        scroll = ScrollView(size_hint_y=0.5)
-        self.stats_container = GridLayout(cols=2, spacing=8, size_hint_y=None, padding=5)
+        scroll = ScrollView(size_hint_y=0.55)
+        self.stats_container = GridLayout(cols=1, spacing=10, size_hint_y=None, padding=10)
         self.stats_container.bind(minimum_height=self.stats_container.setter('height'))
         scroll.add_widget(self.stats_container)
         self.layout.add_widget(scroll)
@@ -571,9 +571,9 @@ class HomeScreen(Screen):
     
     def create_stat_card(self, icon, title, value, subtitle=''):
         """Crear tarjeta de estadística"""
-        card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=10, spacing=8)
+        card = StyledCard(orientation='horizontal', size_hint_y=None, height=100, padding=15, spacing=10)
         
-        icon_label = Label(text=icon, font_size='28sp', size_hint_x=0.25, color=TEXT)
+        icon_label = Label(text=icon, font_size='36sp', size_hint_x=0.25, color=TEXT)
         
         content = BoxLayout(orientation='vertical')
         
