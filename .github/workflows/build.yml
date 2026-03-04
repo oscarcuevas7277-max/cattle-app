@@ -3,85 +3,67 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      
-      # 1. Preparar Python 3.9
+
+      # 1. Usar Python 3.9
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      
-      # 2. Instalar dependencias del sistema
+
+      # 2. CONFIGURACIÓN CRÍTICA: Forzar Java 17 (Obligatorio para Android moderno)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3. Limpiar instalaciones manuales previas que causan el error de "sdkmanager not found"
+      - name: Clean Previous SDK residues
+        run: |
+          rm -rf ~/.buildozer/android/platform/android-sdk
+          rm -rf .buildozer/android/platform/android-sdk
+
+      # 4. Instalar dependencias del sistema necesarias para Kivy/Buildozer
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev
-          sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev
-          sudo apt-get install -y zlib1g-dev openjdk-17-jdk unzip autoconf libtool pkg-config
-      
-      # 3. Instalar Buildozer
-      - name: Install Buildozer
+          sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev \
+          libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+          libportmidi-dev zlib1g-dev autoconf libtool pkg-config cmake gettext
+
+      # 5. Instalar Buildozer y Cython (Versión estable para Android)
+      - name: Install Buildozer & Cython
         run: |
           pip install --upgrade pip
-          pip install buildozer cython
-      
-      # 4. Instalación manual del SDK
-      - name: Install Android SDK Manually
-        run: |
-          export SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $SDK_DIR
-          
-          echo "Descargando Android Command Line Tools..."
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          
-          unzip -q cmdline-tools.zip
-          mkdir -p $SDK_DIR/cmdline-tools
-          mv cmdline-tools $SDK_DIR/cmdline-tools/latest
-          rm cmdline-tools.zip
-          
-          mkdir -p $SDK_DIR/licenses
-          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $SDK_DIR/licenses/android-sdk-license
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $SDK_DIR/licenses/android-sdk-license
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $SDK_DIR/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" > $SDK_DIR/licenses/android-sdk-preview-license
-          
-          echo "SDK Instalado en $SDK_DIR"
-      
-      # 5. Configurar Buildozer Spec CORREGIDO
+          pip install "buildozer>=1.5.0" "cython<3.0.0"
+
+      # 6. Configurar el archivo .spec automáticamente
       - name: Configure Buildozer Spec
         run: |
           if [ ! -f buildozer.spec ]; then buildozer init; fi
           
-          # APIs estables
+          # Forzar parámetros correctos para evitar errores de SDK/NDK
           sed -i 's/android.api = .*/android.api = 33/' buildozer.spec
           sed -i 's/android.minapi = .*/android.minapi = 21/' buildozer.spec
           sed -i 's/android.ndk = .*/android.ndk = 25b/' buildozer.spec
           sed -i 's/android.accept_sdk_license = .*/android.accept_sdk_license = True/' buildozer.spec
           
-          # CORRECCIÓN CRÍTICA: Requirements correctos para Android
-          sed -i 's/requirements = .*/requirements = python3,kivy==2.1.0,android,pyjnius/' buildozer.spec
-          
-          # Permisos necesarios
-          sed -i 's/android.permissions = .*/android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE/' buildozer.spec
-          
-          # Orientación vertical
-          sed -i 's/orientation = .*/orientation = portrait/' buildozer.spec
-          
-          echo "Buildozer.spec configurado correctamente"
-          cat buildozer.spec
-      
-      # 6. Compilar
+          # Requisitos de la App
+          sed -i 's/requirements = .*/requirements = python3,kivy==2.2.1,android,pyjnius/' buildozer.spec
+
+      # 7. Compilación
       - name: Build with Buildozer
-        env:
-          ANDROIDSDK: /home/runner/.buildozer/android/platform/android-sdk
         run: |
+          # El comando yes acepta las licencias de Android que Buildozer descargará solo
           yes | buildozer android debug
-      
-      # 7. Subir APK
+
+      # 8. Guardar el archivo APK resultante
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
