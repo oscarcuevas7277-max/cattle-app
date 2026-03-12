@@ -534,7 +534,7 @@ class HomeScreen(Screen):
         
         # Stats cards
         scroll = ScrollView(size_hint_y=0.55)
-        self.stats_container = GridLayout(cols=1, spacing=10, size_hint_y=None, padding=10)
+        self.stats_container = BoxLayout(orientation='vertical', spacing=15, size_hint_y=None, padding=[10, 10])
         self.stats_container.bind(minimum_height=self.stats_container.setter('height'))
         scroll.add_widget(self.stats_container)
         self.layout.add_widget(scroll)
@@ -569,28 +569,29 @@ class HomeScreen(Screen):
         except Exception as e:
             print(f"[ERROR] HomeScreen.update_stats: {e}")
     
-    def create_stat_card(self, icon, title, value, subtitle=''):
+    def create_stat_card(self, icon, title, value):
         """Crear tarjeta de estadística"""
-        card = StyledCard(orientation='horizontal', size_hint_y=None, height=100, padding=15, spacing=10)
+        card = StyledCard(orientation='vertical', size_hint_y=None, height=130, padding=20, spacing=10)
         
-        icon_label = Label(text=icon, font_size='36sp', size_hint_x=0.25, color=TEXT)
+        icon_label = Label(text=icon, font_size='50sp', size_hint_y=None, height=85, color=TEXT)
         
         content = BoxLayout(orientation='vertical')
         
-        title_color = ''.join([f'{int(c*255):02x}' for c in TEXT_DIM[:3]])
         title_label = Label(
-            text=f'[color={title_color}]{title}[/color]',
-            markup=True,
-            font_size='11sp',
-            halign='left'
+            text=title,
+            font_size='15sp',
+            size_hint_y=None,
+            height=30,
+            color=TEXT_DIM
         )
         title_label.bind(size=title_label.setter('text_size'))
         
         value_label = Label(
             text=f'[b]{value}[/b]',
             markup=True,
-            font_size='20sp',
-            halign='left',
+            font_size='34sp',
+            size_hint_y=None,
+            height=45,
             color=TEXT
         )
         value_label.bind(size=value_label.setter('text_size'))
@@ -598,18 +599,11 @@ class HomeScreen(Screen):
         content.add_widget(title_label)
         content.add_widget(value_label)
         
-        if subtitle:
-            sub_label = Label(
-                text=f'[color={title_color}]{subtitle}[/color]',
-                markup=True,
-                font_size='9sp',
-                halign='left'
-            )
-            sub_label.bind(size=sub_label.setter('text_size'))
-            content.add_widget(sub_label)
+        
         
         card.add_widget(icon_label)
-        card.add_widget(content)
+        card.add_widget(value_label)
+        card.add_widget(title_label)
         
         return card
     
@@ -621,15 +615,15 @@ class HomeScreen(Screen):
             db = App.get_running_app().db
             stats = db.get_statistics()
             
-            self.stats_container.add_widget(self.create_stat_card('🐮', 'Total Vacas', stats.get('total_cattle', 0)))
-            self.stats_container.add_widget(self.create_stat_card('🤰', 'Preñadas', stats.get('pregnant', 0), f"{stats.get('not_pregnant', 0)} sin cargar"))
-            self.stats_container.add_widget(self.create_stat_card('⚠️', 'Próximas 60d', stats.get('near_birth_60', 0), 'A parir'))
-            self.stats_container.add_widget(self.create_stat_card('🚫', 'Para Secar', stats.get('to_dry', 0), '60-90 días'))
-            self.stats_container.add_widget(self.create_stat_card('👶', 'Partos 30d', stats.get('recent_births', 0), 'Recientes'))
-            self.stats_container.add_widget(self.create_stat_card('📊', f'Año {datetime.now().year}', stats.get('births_this_year', 0), 'Partos'))
+            self.stats_container.add_widget(self.create_stat_card('🐮', 'Total Vacas', stats.get('total_cattle')))
+            self.stats_container.add_widget(self.create_stat_card('🤰', 'Preñadas', stats.get('pregnant'), f"{stats.get('not_pregnant', 0)} sin cargar"))
+            self.stats_container.add_widget(self.create_stat_card('⚠️', 'Próximas 60d', stats.get('near_birth_60'), 'A parir'))
+            self.stats_container.add_widget(self.create_stat_card('🚫', 'Para Secar', stats.get('to_dry'), '60-90 días'))
+            self.stats_container.add_widget(self.create_stat_card('👶', 'Partos 30d', stats.get('recent_births'), 'Recientes'))
+            self.stats_container.add_widget(self.create_stat_card('📊', f'Año {datetime.now().year}', stats.get('births_this_year'), 'Partos'))
             # NUEVA TARJETA: % Partos/Año
-            self.stats_container.add_widget(self.create_stat_card('📈', '% Partos/Año', f"{stats.get('birth_rate_annual', 0)}%", '2 años'))
-            self.stats_container.add_widget(self.create_stat_card('⚖️', 'Peso Prom', f"{stats.get('avg_weight', 0)} kg"))
+            self.stats_container.add_widget(self.create_stat_card('📈', '% Partos/Año', f"{stats.get('birth_rate_annual')}%", '2 años'))
+            self.stats_container.add_widget(self.create_stat_card('⚖️', 'Peso Prom', f"{stats.get('avg_weight')} kg"))
         except Exception as e:
             print(f"[ERROR] update_stats: {e}")
 
@@ -651,13 +645,13 @@ class CattleListScreen(Screen):
             hint_text='Buscar por arete o nombre...',
             multiline=False,
             size_hint_x=0.7,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             background_color=CARD,
             foreground_color=TEXT,
             cursor_color=PRIMARY,
             hint_text_color=TEXT_DIM,
-            padding=[15, 20],  # ← MÁS PADDING
-            font_size='18sp'  # ← FUENTE MÁS GRANDE
+            padding=[20, 30],  # ← MÁS PADDING
+            font_size='20sp'  # ← FUENTE MÁS GRANDE
         )
         self.search_input.bind(text=self.on_search)
         
@@ -690,7 +684,7 @@ class CattleListScreen(Screen):
                 no_data = Label(
                     text='No hay vacas registradas',
                     size_hint_y=None,
-                    height=70,
+                    height=85,
                     color=TEXT_DIM,
                     font_size='16sp'
                 )
@@ -705,7 +699,7 @@ class CattleListScreen(Screen):
     
     def create_cattle_card(self, cattle):
         """Crear tarjeta de vaca"""
-        card = StyledCard(orientation='vertical', size_hint_y=None, height=120, padding=15, spacing=8)
+        card = StyledCard(orientation='vertical', size_hint_y=None, height=170, padding=20, spacing=10)
         
         # Header con número y nombre
         header = BoxLayout(orientation='horizontal', size_hint_y=0.4)
@@ -722,7 +716,7 @@ class CattleListScreen(Screen):
         
         name_label = Label(
             text=cattle.get('name', 'Sin nombre'),
-            font_size='18sp',
+            font_size='20sp',
             color=TEXT,
             size_hint_x=0.6,
             halign='left'
@@ -808,7 +802,7 @@ class AddCattleScreen(Screen):
             markup=True,
             size_hint_x=0.5,
             color=TEXT,
-            font_size='18sp'
+            font_size='20sp'
         )
         
         top_bar.add_widget(btn_back)
@@ -833,12 +827,12 @@ class AddCattleScreen(Screen):
         self.tag_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             background_color=CARD,
             foreground_color=TEXT,
             cursor_color=PRIMARY,
-            padding=[15, 20],  # ← MÁS PADDING
-            font_size='18sp'  # ← FUENTE MÁS GRANDE
+            padding=[20, 30],  # ← MÁS PADDING
+            font_size='20sp'  # ← FUENTE MÁS GRANDE
         )
         form.add_widget(self.tag_input)
         
@@ -853,12 +847,12 @@ class AddCattleScreen(Screen):
         self.name_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             background_color=CARD,
             foreground_color=TEXT,
             cursor_color=PRIMARY,
-            padding=[15, 20],
-            font_size='18sp'
+            padding=[20, 30],
+            font_size='20sp'
         )
         form.add_widget(self.name_input)
         
@@ -873,14 +867,14 @@ class AddCattleScreen(Screen):
         self.birth_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             hint_text='2020-01-15',
             background_color=CARD,
             foreground_color=TEXT,
             hint_text_color=TEXT_DIM,
             cursor_color=PRIMARY,
-            padding=[15, 20],
-            font_size='18sp'
+            padding=[20, 30],
+            font_size='20sp'
         )
         form.add_widget(self.birth_input)
         
@@ -895,15 +889,15 @@ class AddCattleScreen(Screen):
         self.weight_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             hint_text='540',
             input_filter='float',
             background_color=CARD,
             foreground_color=TEXT,
             hint_text_color=TEXT_DIM,
             cursor_color=PRIMARY,
-            padding=[15, 20],
-            font_size='18sp'
+            padding=[20, 30],
+            font_size='20sp'
         )
         form.add_widget(self.weight_input)
         
@@ -919,10 +913,10 @@ class AddCattleScreen(Screen):
             text='Seleccionar',
             values=('Vaca', 'Vaquilla', 'Becerra', 'Otro'),
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             background_color=CARD,
             color=TEXT,
-            font_size='18sp'
+            font_size='20sp'
         )
         form.add_widget(self.category_spinner)
         
@@ -936,7 +930,7 @@ class AddCattleScreen(Screen):
             halign='left'
         ))
         
-        pregnant_box = BoxLayout(size_hint_y=None, height=70, spacing=10)
+        pregnant_box = BoxLayout(size_hint_y=None, height=85, spacing=10)
         self.pregnant_yes = RoundedButton(text='Sí', bg_color=CARD)
         self.pregnant_no = RoundedButton(text='No', bg_color=PRIMARY)
         self.pregnant_yes.bind(on_press=self.toggle_pregnant_yes)
@@ -962,14 +956,14 @@ class AddCattleScreen(Screen):
         self.pregnancy_date_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             hint_text='2024-06-01',
             background_color=CARD,
             foreground_color=TEXT,
             hint_text_color=TEXT_DIM,
             cursor_color=PRIMARY,
-            padding=[15, 20],
-            font_size='18sp'
+            padding=[20, 30],
+            font_size='20sp'
         )
         self.pregnancy_date_input.bind(text=self.calculate_expected_birth)
         self.pregnancy_fields.add_widget(self.pregnancy_date_input)
@@ -985,12 +979,12 @@ class AddCattleScreen(Screen):
         self.expected_birth_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             background_color=CARD,
             foreground_color=TEXT,
             cursor_color=PRIMARY,
-            padding=[15, 20],
-            font_size='18sp',
+            padding=[20, 30],
+            font_size='20sp',
             disabled=True
         )
         self.pregnancy_fields.add_widget(self.expected_birth_input)
@@ -1011,14 +1005,14 @@ class AddCattleScreen(Screen):
         self.last_birth_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             hint_text='2024-01-15',
             background_color=CARD,
             foreground_color=TEXT,
             hint_text_color=TEXT_DIM,
             cursor_color=PRIMARY,
-            padding=[15, 20],
-            font_size='18sp'
+            padding=[20, 30],
+            font_size='20sp'
         )
         form.add_widget(self.last_birth_input)
         
@@ -1051,7 +1045,7 @@ class AddCattleScreen(Screen):
             text='💾 Guardar Vaca',
             size_hint_y=0.1,
             bg_color=SUCCESS,
-            font_size='18sp'
+            font_size='20sp'
         )
         btn_save.bind(on_press=self.save_cattle)
         self.layout.add_widget(btn_save)
@@ -1145,7 +1139,7 @@ class CattleDetailScreen(Screen):
             text='[b]Detalle Vaca[/b]',
             markup=True,
             color=TEXT,
-            font_size='18sp'
+            font_size='20sp'
         )
         
         btn_delete = RoundedButton(text='🗑️ Eliminar', bg_color=DANGER, size_hint_x=0.4)
@@ -1180,7 +1174,7 @@ class CattleDetailScreen(Screen):
                 return
             
             # Tarjeta de información
-            info_card = StyledCard(orientation='vertical', size_hint_y=None, height=250, padding=15, spacing=10)
+            info_card = StyledCard(orientation='vertical', size_hint_y=None, height=350, padding=20, spacing=15)
             
             title = Label(
                 text=f"[b]🐮 {cattle_data['tag_number']}[/b]\n{cattle_data.get('name', 'Sin nombre')}",
@@ -1193,7 +1187,7 @@ class CattleDetailScreen(Screen):
             # Información
             info_text = f"""Categoría: {cattle_data.get('category', 'N/A')}
 Edad: {calculate_age(cattle_data.get('birth_date'))}
-Peso: {cattle_data.get('weight', 'N/A')} kg
+Peso: {cattle_data.get('weight') or 0} kg
 Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
             
             if cattle_data['is_pregnant'] and cattle_data.get('expected_birth_date'):
@@ -1302,17 +1296,17 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
         """Agregar vacunación"""
         content = BoxLayout(orientation='vertical', spacing=15, padding=15)
         
-        content.add_widget(Label(text='💉 Nueva Vacunación', font_size='18sp', size_hint_y=None, height=35))
+        content.add_widget(Label(text='💉 Nueva Vacunación', font_size='20sp', size_hint_y=None, height=35))
         
         content.add_widget(Label(text='Nombre de la vacuna:', size_hint_y=None, height=30, halign='left'))
         vaccine_input = TextInput(
             multiline=False,
             size_hint_y=None,
-            height=70,
+            height=85,
             background_color=CARD,
             foreground_color=TEXT,
-            font_size='18sp',
-            padding=[15, 20]
+            font_size='20sp',
+            padding=[20, 30]
         )
         content.add_widget(vaccine_input)
         
@@ -1321,11 +1315,11 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
             text=datetime.now().strftime('%Y-%m-%d'),
             multiline=False,
             size_hint_y=None,
-            height=70,
+            height=85,
             background_color=CARD,
             foreground_color=TEXT,
-            font_size='18sp',
-            padding=[15, 20]
+            font_size='20sp',
+            padding=[20, 30]
         )
         content.add_widget(date_input)
         
@@ -1334,16 +1328,16 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
             text='180',
             multiline=False,
             size_hint_y=None,
-            height=70,
+            height=85,
             background_color=CARD,
             foreground_color=TEXT,
             input_filter='int',
-            font_size='18sp',
-            padding=[15, 20]
+            font_size='20sp',
+            padding=[20, 30]
         )
         content.add_widget(interval_input)
         
-        btn_layout = BoxLayout(size_hint_y=None, height=70, spacing=10)
+        btn_layout = BoxLayout(size_hint_y=None, height=85, spacing=10)
         
         popup = Popup(title='Vacunación', content=content, size_hint=(0.9, 0.8))
         
@@ -1384,18 +1378,18 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
         """Registrar parto"""
         content = BoxLayout(orientation='vertical', spacing=15, padding=15)
         
-        content.add_widget(Label(text='👶 Registrar Parto', font_size='18sp', size_hint_y=None, height=35))
+        content.add_widget(Label(text='👶 Registrar Parto', font_size='20sp', size_hint_y=None, height=35))
         
         content.add_widget(Label(text='Fecha (AAAA-MM-DD):', size_hint_y=None, height=30, halign='left'))
         date_input = TextInput(
             text=datetime.now().strftime('%Y-%m-%d'),
             multiline=False,
             size_hint_y=None,
-            height=70,
+            height=85,
             background_color=CARD,
             foreground_color=TEXT,
-            font_size='18sp',
-            padding=[15, 20]
+            font_size='20sp',
+            padding=[20, 30]
         )
         content.add_widget(date_input)
         
@@ -1411,7 +1405,7 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
         )
         content.add_widget(notes_input)
         
-        btn_layout = BoxLayout(size_hint_y=None, height=70, spacing=10)
+        btn_layout = BoxLayout(size_hint_y=None, height=85, spacing=10)
         
         popup = Popup(title='Parto', content=content, size_hint=(0.9, 0.7))
         
@@ -1448,22 +1442,22 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
         """Secar vaca"""
         content = BoxLayout(orientation='vertical', spacing=15, padding=15)
         
-        content.add_widget(Label(text='🚫 Secar Vaca', font_size='18sp', size_hint_y=None, height=35))
+        content.add_widget(Label(text='🚫 Secar Vaca', font_size='20sp', size_hint_y=None, height=35))
         
         content.add_widget(Label(text='Fecha (AAAA-MM-DD):', size_hint_y=None, height=30, halign='left'))
         date_input = TextInput(
             text=datetime.now().strftime('%Y-%m-%d'),
             multiline=False,
             size_hint_y=None,
-            height=70,
+            height=85,
             background_color=CARD,
             foreground_color=TEXT,
-            font_size='18sp',
-            padding=[15, 20]
+            font_size='20sp',
+            padding=[20, 30]
         )
         content.add_widget(date_input)
         
-        btn_layout = BoxLayout(size_hint_y=None, height=70, spacing=10)
+        btn_layout = BoxLayout(size_hint_y=None, height=85, spacing=10)
         
         popup = Popup(title='Secado', content=content, size_hint=(0.9, 0.5))
         
@@ -1494,18 +1488,18 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
         """Marcar como preñada"""
         content = BoxLayout(orientation='vertical', spacing=15, padding=15)
         
-        content.add_widget(Label(text='🤰 Cargar Vaca', font_size='18sp', size_hint_y=None, height=35))
+        content.add_widget(Label(text='🤰 Cargar Vaca', font_size='20sp', size_hint_y=None, height=35))
         
         content.add_widget(Label(text='Fecha carga (AAAA-MM-DD):', size_hint_y=None, height=30, halign='left'))
         preg_date_input = TextInput(
             text=datetime.now().strftime('%Y-%m-%d'),
             multiline=False,
             size_hint_y=None,
-            height=70,
+            height=85,
             background_color=CARD,
             foreground_color=TEXT,
-            font_size='18sp',
-            padding=[15, 20]
+            font_size='20sp',
+            padding=[20, 30]
         )
         content.add_widget(preg_date_input)
         
@@ -1514,7 +1508,7 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
             text='',
             size_hint_y=None,
             height=35,
-            font_size='18sp',
+            font_size='20sp',
             color=SUCCESS
         )
         content.add_widget(expected_label)
@@ -1531,7 +1525,7 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
         preg_date_input.bind(text=update_expected)
         update_expected(None, preg_date_input.text)
         
-        btn_layout = BoxLayout(size_hint_y=None, height=70, spacing=10)
+        btn_layout = BoxLayout(size_hint_y=None, height=85, spacing=10)
         
         popup = Popup(title='Cargar', content=content, size_hint=(0.9, 0.6))
         
@@ -1572,7 +1566,7 @@ Estado: {'🤰 PREÑADA' if cattle_data['is_pregnant'] else 'Sin cargar'}"""
             color=DANGER
         ))
         
-        btn_layout = BoxLayout(size_hint_y=None, height=70, spacing=10)
+        btn_layout = BoxLayout(size_hint_y=None, height=85, spacing=10)
         
         popup = Popup(title='Confirmar', content=content, size_hint=(0.9, 0.4))
         
@@ -1613,7 +1607,7 @@ class AgendaScreen(Screen):
             text='[b]📅 Agenda (60 días)[/b]',
             markup=True,
             color=TEXT,
-            font_size='18sp'
+            font_size='20sp'
         )
         
         top_bar.add_widget(btn_back)
@@ -1752,7 +1746,7 @@ class AgendaScreen(Screen):
                 self.events_container.add_widget(Label(
                     text='No hay eventos próximos',
                     size_hint_y=None,
-                    height=70,
+                    height=85,
                     font_size='16sp',
                     color=TEXT_DIM
                 ))
@@ -1804,7 +1798,7 @@ class QuickLogScreen(Screen):
             text='[b]⚡ Registro Rápido[/b]',
             markup=True,
             color=TEXT,
-            font_size='18sp'
+            font_size='20sp'
         )
         
         top_bar.add_widget(btn_back)
@@ -1838,13 +1832,13 @@ class QuickLogScreen(Screen):
             hint_text='Ej: vacuné 123',
             multiline=False,
             size_hint_x=0.7,
-            height=70,  # ← MÁS GRANDE
+            height=85,  # ← MÁS GRANDE
             background_color=CARD,
             foreground_color=TEXT,
             hint_text_color=TEXT_DIM,
             cursor_color=PRIMARY,
-            padding=[15, 20],  # ← MÁS PADDING
-            font_size='18sp'  # ← FUENTE MÁS GRANDE
+            padding=[20, 30],  # ← MÁS PADDING
+            font_size='20sp'  # ← FUENTE MÁS GRANDE
         )
         self.quick_input.bind(on_text_validate=self.process_command)
         
@@ -1876,13 +1870,13 @@ class QuickLogScreen(Screen):
                     text=f'[color={dim_color}]Sin actividades recientes[/color]',
                     markup=True,
                     size_hint_y=None,
-                    height=70,
+                    height=85,
                     font_size='16sp'
                 ))
                 return
             
             for activity in activities:
-                activity_card = StyledCard(orientation='vertical', size_hint_y=None, height=70, padding=10, spacing=5)
+                activity_card = StyledCard(orientation='vertical', size_hint_y=None, height=85, padding=10, spacing=5)
                 
                 dim_color = ''.join([f'{int(c*255):02x}' for c in TEXT_DIM[:3]])
                 time_label = Label(
@@ -1978,7 +1972,7 @@ class QuickLogScreen(Screen):
     
     def show_message(self, message):
         """Mostrar mensaje de resultado"""
-        msg_card = StyledCard(orientation='horizontal', size_hint_y=None, height=70, padding=10)
+        msg_card = StyledCard(orientation='horizontal', size_hint_y=None, height=85, padding=10)
         
         if '✅' in message:
             color = SUCCESS
